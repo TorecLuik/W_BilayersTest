@@ -19,7 +19,7 @@ exec_function:
   hidden_args:
 
 inputs:
-  - name: input_image
+  - name: inputfile
     type: image
     label: "Input image"
     subtype: 
@@ -27,7 +27,7 @@ inputs:
       - color
       - binary
     description: "Path to the directory of input image"
-    cli_tag: "--input_image"
+    cli_tag: "--inputfile"
     cli_order: 0
     default: "directory"
     optional: False
@@ -41,7 +41,7 @@ inputs:
     mode: "beginner"
 
 outputs:
-  - name: output_image
+  - name: outputfolder
     type: image
     label: "Output image"
     subtype:
@@ -49,7 +49,7 @@ outputs:
       - color
       - binary
     description: "Segmented image if --save_omezarr flag is true."
-    cli_tag: "--output_image"
+    cli_tag: "--outputfolder"
     cli_order: 0
     default: "directory"
     optional: True
