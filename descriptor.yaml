@@ -19,15 +19,15 @@ exec_function:
   hidden_args:
 
 inputs:
-  - name: input_images
+  - name: input_image
     type: image
-    label: "Input Image"
+    label: "Input image"
     subtype: 
       - grayscale
       - color
       - binary
-    description: "Path to the directory of input images"
-    cli_tag: "--input_images"
+    description: "Path to the directory of input image"
+    cli_tag: "--input_image"
     cli_order: 0
     default: "directory"
     optional: False
@@ -35,7 +35,7 @@ inputs:
       - tiff
       - ometiff
       - omezarr
-    folder_name: "/input_images"
+    folder_name: "/input_image"
     file_count: "multiple"
     section_id: "inputs"
     mode: "beginner"
@@ -43,15 +43,19 @@ inputs:
 outputs:
   - name: output_image
     type: image
-    label: "Segmented Ome-zarr images"
-    subtype: 
-      - label
+    label: "Output image"
+    subtype:
+      - grayscale
+      - color
+      - binary
     description: "Segmented image if --save_omezarr flag is true."
-    cli_tag: "--output_images"
+    cli_tag: "--output_image"
     cli_order: 0
     default: "directory"
     optional: True
     format: 
+      - tiff
+      - ometiff
       - omezarr
     folder_name: "/output_image"
     file_count: "multiple"
