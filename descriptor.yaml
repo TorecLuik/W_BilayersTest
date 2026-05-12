@@ -1,0 +1,59 @@
+# Based on example https://github.com/bilayer-containers/bilayers/blob/main/algorithms/cellpose_inference/config.yaml
+citations:
+  - name: "BilayersTest"
+    doi: 10.1016/j.cels.2022.12.006
+    license: "BSD 3-Clause"
+    description: "Bilayers test"
+
+docker_image:
+  org: cellularimagingcf
+  name: w_bilayerstest
+  #tag: "v0.0.1"
+  platform: "linux/amd64"
+
+algorithm_folder_name: "W_BilayersTest"
+
+exec_function: 
+  name: "generate_cli_command"
+  cli_command: "python -m main.py"
+  hidden_args:
+
+inputs:
+  - name: input_images
+    type: image
+    label: "Input Image"
+    subtype: 
+      - grayscale
+      - color
+      - binary
+    description: "Path to the directory of input images"
+    cli_tag: "--input_images"
+    cli_order: 0
+    default: "directory"
+    optional: False
+    format: 
+      - tiff
+      - ometiff
+      - omezarr
+    folder_name: "/input_images"
+    file_count: "multiple"
+    section_id: "inputs"
+    mode: "beginner"
+
+outputs:
+  - name: output_image
+    type: image
+    label: "Segmented Ome-zarr images"
+    subtype: 
+      - label
+    description: "Segmented image if --save_omezarr flag is true."
+    cli_tag: "--output_images"
+    cli_order: 0
+    default: "directory"
+    optional: True
+    format: 
+      - omezarr
+    folder_name: "/output_image"
+    file_count: "multiple"
+    section_id: "outputs"
+    mode: "beginner"
