@@ -26,6 +26,7 @@ inputs:
       - grayscale
       - color
       - binary
+      - plate
     description: "Path to the directory of input image"
     cli_tag: "--inputfile"
     cli_order: 0
