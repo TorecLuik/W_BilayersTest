@@ -4,7 +4,11 @@ import shutil
 
 
 def process(input_filename, output_folder, alt_output_folder=None,
-            show_progress=False, verbose=False, max_attempts=1, **kwargs):
+            show_progress=False, verbose=False, max_attempts=1,
+            pick_one='alpha', a_number=1.0, an_axis=0, a_count=10,
+            logfile='', **kwargs):
+
+    print(f'[params] pick_one={pick_one!r} a_number={a_number} an_axis={an_axis} a_count={a_count}')
 
     filename = os.path.basename(input_filename)
     title = os.path.splitext(filename)[0].rstrip('.ome')
@@ -27,5 +31,16 @@ def process(input_filename, output_folder, alt_output_folder=None,
 
     if show_progress:
         print(message)
+
+    if logfile:
+        os.makedirs(os.path.dirname(logfile), exist_ok=True) if os.path.dirname(logfile) else None
+        with open(logfile, 'w') as f:
+            f.write(f'pick_one={pick_one}\n')
+            f.write(f'a_number={a_number}\n')
+            f.write(f'an_axis={an_axis}\n')
+            f.write(f'a_count={a_count}\n')
+            f.write(f'input={input_filename}\n')
+            f.write(f'output={output_path}\n')
+        result['logfile'] = logfile
 
     return json.dumps([result])

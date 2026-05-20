@@ -62,3 +62,84 @@ outputs:
     file_count: "multiple"
     section_id: "outputs"
     mode: "beginner"
+
+  - name: logfile
+    type: file
+    label: "Run log"
+    description: "Key/value log of the parameters used for this run."
+    cli_tag: "--logfile"
+    cli_order: 1
+    default: "single"
+    optional: True
+    format:
+      - log
+    folder_name: "/output_image"
+    file_count: "single"
+    section_id: "outputs"
+    mode: "beginner"
+
+parameters:
+  - name: pick_one
+    type: radio
+    label: "Pick one"
+    description: "Demo dropdown — labels differ from values."
+    options:
+      - label: "Option Alpha"
+        value: alpha
+      - label: "Option Beta"
+        value: beta
+      - label: "Option Gamma"
+        value: gamma
+    default: alpha
+    cli_tag: "--pick_one"
+    optional: True
+    section_id: "demo-args"
+    mode: "beginner"
+
+  - name: a_number
+    type: float
+    label: "A number"
+    description: "Demo float."
+    default: 1.0
+    cli_tag: "--a_number"
+    optional: True
+    section_id: "demo-args"
+    mode: "beginner"
+
+  - name: an_axis
+    type: radio
+    label: "An axis"
+    description: "Demo dropdown where labels equal values."
+    options:
+      - label: 0
+        value: 0
+      - label: 1
+        value: 1
+      - label: 2
+        value: 2
+    default: 0
+    cli_tag: "--an_axis"
+    optional: True
+    section_id: "demo-args"
+    mode: "advanced"
+
+  - name: a_count
+    type: integer
+    label: "A count"
+    description: "Demo integer."
+    default: 10
+    cli_tag: "--a_count"
+    optional: True
+    section_id: "demo-args"
+    mode: "advanced"
+
+  - name: save_dir
+    type: textbox
+    label: "Save directory"
+    description: "Directory to save output files."
+    output_dir_set: True
+    default: "/output_images"
+    cli_tag: "--savedir"
+    optional: True
+    section_id: "demo-args"
+    mode: "advanced"
