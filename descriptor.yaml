@@ -6,7 +6,7 @@ citations:
     description: "Bilayers test"
 
 docker_image:
-  org: cellularimagingcf
+  org: torecluik
   name: w_bilayerstest
   #tag: "v0.0.1"
   platform: "linux/amd64"
