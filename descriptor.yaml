@@ -44,7 +44,7 @@ inputs:
   - name: measurement_table
     type: measurement
     label: "Measurement table"
-    description: "Optional measurement/results table to feed into the workflow (e.g. a CSV from a previous analysis step)."
+    description: "Optional measurement/results tables to feed into the workflow (e.g. CSVs from previous analysis steps)."
     cli_tag: "--measurement_table"
     cli_order: 1
     optional: True
@@ -52,7 +52,7 @@ inputs:
       - csv
       - parquet
       - feather
-    file_count: "single"
+    file_count: "multiple"
     section_id: "file-inputs"
     mode: "beginner"
 
