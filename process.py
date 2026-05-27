@@ -3,17 +3,90 @@ import os.path
 import shutil
 
 
-def _copy_file_to_output(src, output_folder, label):
-    """Copy a single file to output_folder. Returns dest path or None."""
+def _has_allowed_extension(path, allowed_extensions):
+    """Return True when file extension matches allowed_extensions."""
+    if not allowed_extensions:
+        return True
+    ext = os.path.splitext(path)[1].lstrip('.').lower()
+    normalised = {e.lstrip('.').lower() for e in allowed_extensions if e}
+    return ext in normalised
+
+
+def _copy_path_to_output(src, output_folder, label, allowed_extensions=None):
+    """Copy file(s) from a file path or directory into output_folder."""
     if not src:
-        return None
+        return []
+
+    copied = []
     if os.path.isfile(src):
+        if not _has_allowed_extension(src, allowed_extensions):
+            print(
+                f'[{label}] WARNING: skipped {src}; unsupported extension '
+                f'for this parameter'
+            )
+            return []
         dest = os.path.join(output_folder, os.path.basename(src))
         shutil.copy2(src, dest)
         print(f'[{label}] copied {src} -> {dest}')
-        return dest
-    print(f'[{label}] WARNING: file not found: {src}')
-    return None
+        return [dest]
+
+    if os.path.isdir(src):
+        for name in sorted(os.listdir(src)):
+            file_path = os.path.join(src, name)
+            if not os.path.isfile(file_path):
+                continue
+            if not _has_allowed_extension(file_path, allowed_extensions):
+                continue
+            dest = os.path.join(output_folder, name)
+            shutil.copy2(file_path, dest)
+            copied.append(dest)
+            print(f'[{label}] copied {file_path} -> {dest}')
+        if copied:
+            return copied
+        print(
+            f'[{label}] WARNING: no matching files found in directory: '
+            f'{src}'
+        )
+        return []
+
+    print(f'[{label}] WARNING: file or directory not found: {src}')
+    return []
+
+
+def _resolve_logfile_paths(logfile):
+    """Resolve one or more logfile paths from a file or directory input."""
+    if not logfile:
+        return []
+
+    # Some runners pass logfile as an output directory.
+    # In that case, use any existing .log files in that directory.
+    if os.path.isdir(logfile):
+        existing_logs = sorted(
+            os.path.join(logfile, name)
+            for name in os.listdir(logfile)
+            if name.lower().endswith('.log')
+            and os.path.isfile(os.path.join(logfile, name))
+        )
+        if existing_logs:
+            return existing_logs
+        return [os.path.join(logfile, 'run.log')]
+
+    base = os.path.basename(logfile)
+    ext = os.path.splitext(base)[1]
+    if not ext:
+        # Treat extension-less values as a directory path.
+        if os.path.exists(logfile):
+            existing_logs = sorted(
+                os.path.join(logfile, name)
+                for name in os.listdir(logfile)
+                if name.lower().endswith('.log')
+                and os.path.isfile(os.path.join(logfile, name))
+            )
+            if existing_logs:
+                return existing_logs
+        return [os.path.join(logfile, 'run.log')]
+
+    return [logfile]
 
 
 def process(input_filename, output_folder, alt_output_folder=None,
@@ -22,7 +95,10 @@ def process(input_filename, output_folder, alt_output_folder=None,
             logfile='', measurement_table_dir=None,
             extra_array=None, config_file=None, custom_model=None, **kwargs):
 
-    print(f'[params] pick_one={pick_one!r} a_number={a_number} an_axis={an_axis} a_count={a_count}')
+    print(
+        f'[params] pick_one={pick_one!r} a_number={a_number} '
+        f'an_axis={an_axis} a_count={a_count}'
+    )
 
     filename = os.path.basename(input_filename)
     title = os.path.splitext(filename)[0].rstrip('.ome')
@@ -46,51 +122,61 @@ def process(input_filename, output_folder, alt_output_folder=None,
     if show_progress:
         print(message)
 
-    # Copy measurement table files to output and track them
-    copied_tables = []
-    if measurement_table_dir and os.path.isdir(measurement_table_dir):
-        for fname in sorted(os.listdir(measurement_table_dir)):
-            src = os.path.join(measurement_table_dir, fname)
-            if os.path.isfile(src):
-                dest = os.path.join(output_folder, fname)
-                shutil.copy2(src, dest)
-                copied_tables.append(dest)
-                print(f'[table] copied {src} -> {dest}')
-    elif measurement_table_dir:
-        print(f'[table] WARNING: directory not found: {measurement_table_dir}')
-    if copied_tables:
-        result['measurement_tables'] = copied_tables
+    attachment_params = [
+        (
+            'measurement_table', measurement_table_dir,
+            {'csv', 'parquet', 'feather'}, None, 'measurement_tables'
+        ),
+        (
+            'extra_array', extra_array,
+            {'npy', 'npz'}, 'extra_array', 'extra_array_files'
+        ),
+        (
+            'config_file', config_file,
+            {'json', 'yaml', 'yml', 'toml'}, 'config_file', 'config_files'
+        ),
+        (
+            'custom_model', custom_model,
+            None, 'custom_model', 'custom_model_files'
+        ),
+    ]
+    copied_attachments = {}
+    for param, src, formats, single_key, multi_key in attachment_params:
+        copied_paths = _copy_path_to_output(
+            src,
+            output_folder,
+            param if param != 'measurement_table' else 'table',
+            formats,
+        )
+        copied_attachments[param] = copied_paths
+        if not copied_paths:
+            continue
+        if single_key:
+            result[single_key] = copied_paths[0]
+        if multi_key and (
+            param == 'measurement_table' or len(copied_paths) > 1
+        ):
+            result[multi_key] = copied_paths
 
-    # Copy single-file attachments to output
-    copied_extra_array = _copy_file_to_output(extra_array, output_folder, 'extra_array')
-    if copied_extra_array:
-        result['extra_array'] = copied_extra_array
-
-    copied_config_file = _copy_file_to_output(config_file, output_folder, 'config_file')
-    if copied_config_file:
-        result['config_file'] = copied_config_file
-
-    copied_custom_model = _copy_file_to_output(custom_model, output_folder, 'custom_model')
-    if copied_custom_model:
-        result['custom_model'] = copied_custom_model
-
-    if logfile:
-        os.makedirs(os.path.dirname(logfile), exist_ok=True) if os.path.dirname(logfile) else None
-        with open(logfile, 'w') as f:
-            f.write(f'pick_one={pick_one}\n')
-            f.write(f'a_number={a_number}\n')
-            f.write(f'an_axis={an_axis}\n')
-            f.write(f'a_count={a_count}\n')
-            f.write(f'input={input_filename}\n')
-            f.write(f'output={output_path}\n')
-            for i, t in enumerate(copied_tables):
-                f.write(f'measurement_table_{i}={t}\n')
-            if copied_extra_array:
-                f.write(f'extra_array={copied_extra_array}\n')
-            if copied_config_file:
-                f.write(f'config_file={copied_config_file}\n')
-            if copied_custom_model:
-                f.write(f'custom_model={copied_custom_model}\n')
-        result['logfile'] = logfile
+    resolved_logfiles = _resolve_logfile_paths(logfile)
+    if resolved_logfiles:
+        for resolved_logfile in resolved_logfiles:
+            logdir = os.path.dirname(resolved_logfile)
+            if logdir:
+                os.makedirs(logdir, exist_ok=True)
+            with open(resolved_logfile, 'a') as f:
+                f.write(f'pick_one={pick_one}\n')
+                f.write(f'a_number={a_number}\n')
+                f.write(f'an_axis={an_axis}\n')
+                f.write(f'a_count={a_count}\n')
+                f.write(f'input={input_filename}\n')
+                f.write(f'output={output_path}\n')
+                for param, paths in copied_attachments.items():
+                    for i, path in enumerate(paths):
+                        f.write(f'{param}_{i}={path}\n')
+                f.write('\n')
+        result['logfile'] = resolved_logfiles[0]
+        if len(resolved_logfiles) > 1:
+            result['logfiles'] = resolved_logfiles
 
     return json.dumps([result])
