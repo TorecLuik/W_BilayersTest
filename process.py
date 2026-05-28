@@ -53,6 +53,19 @@ def _copy_path_to_output(src, output_folder, label, allowed_extensions=None):
     return []
 
 
+def _is_subpath(child, parent):
+    """Return True if child is the same as, or a subdirectory of, parent."""
+    try:
+        child_abs = os.path.realpath(os.path.abspath(child))
+        parent_abs = os.path.realpath(os.path.abspath(parent))
+        return (
+            child_abs == parent_abs
+            or child_abs.startswith(parent_abs + os.sep)
+        )
+    except (ValueError, TypeError):
+        return False
+
+
 def _resolve_logfile_paths(logfile):
     """Resolve one or more logfile paths from a file or directory input."""
     if not logfile:
@@ -142,6 +155,15 @@ def process(input_filename, output_folder, alt_output_folder=None,
     ]
     copied_attachments = {}
     for param, src, formats, single_key, multi_key in attachment_params:
+        if src and os.path.isdir(src) and _is_subpath(src, input_filename):
+            # This attachment dir is already under input_filename, so copytree
+            # above has already placed it in the output.  Don't copy again.
+            print(
+                f'[{param}] skipping copy of {src!r} '
+                f'(already under {input_filename!r}, covered by copytree)'
+            )
+            copied_attachments[param] = []
+            continue
         copied_paths = _copy_path_to_output(
             src,
             output_folder,
